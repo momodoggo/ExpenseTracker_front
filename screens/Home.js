@@ -10,7 +10,7 @@ import {
     Animated,
     Platform,
     LogBox,
-    Modal
+    Modal,
 } from 'react-native';
 import { VictoryPie } from 'victory-native';
 
@@ -29,7 +29,7 @@ const Home = () => {
         {
             id: 1,
             name: "Education",
-            icon: icons.education,
+            icon: icons.education, // icons[category.name.toLowerCase()]
             color: 'orange',
             expenses: [
                 {
@@ -240,12 +240,29 @@ const Home = () => {
     }
 
     function renderHeader() {
+
+        let chartData = categories.map((item) => {
+            let confirmExpenses = item.expenses.filter(a => a.status == "C")
+            let total = confirmExpenses.reduce((a, b) => a + (b.total || 0), 0)
+
+            return {
+                name: item.name,
+                y: total,
+                expenseCount: confirmExpenses.length,
+                color: item.color,
+                id: item.id
+            }
+        })
+
+        let filterChartData = chartData.filter(a => a.y > 0)
+        let totalExpense = filterChartData.reduce((a, b) => a + (b.y || 0), 0)
+
         return (
             <View style={{ paddingHorizontal: SIZES.padding, paddingVertical: SIZES.padding, backgroundColor: COLORS.white }}>
                 <View style={{ paddingTop: 30}}>
                     <Text style={{ color: 'black', ...FONTS.h2, paddingBottom: 10 }}>Expenses</Text>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between'}}>
-                        <Text style={{ color: 'black', ...FONTS.h1}}t>$403.73</Text>
+                        <Text style={{ color: 'black', ...FONTS.h1}}t>${totalExpense.toFixed(2)}</Text>
                         <TouchableOpacity onPress={() => setShowModal(true)}>
                             <Image 
                                 source={icons.add}
@@ -422,8 +439,22 @@ const Home = () => {
     }
 
     function renderIncomingExpenses() {
+        console.log("selected category", selectedCategory)
         let allExpenses = selectedCategory ? selectedCategory.expenses : []
+        console.log("all expenses", allExpenses)
         let incomingExpenses = allExpenses.filter(a => a.status == "P")
+        
+
+        function confirmIncomingExpenses(expense) {
+            const confirmedExpense = {
+                ...expense, status: "C"
+            }
+            const allOtherItems = allExpenses.filter(expense => expense.id !== confirmedExpense.id)
+            const updatedCategory = {...selectedCategory, expenses: [...allOtherItems, confirmedExpense]}
+            setSelectedCategory(updatedCategory)
+            const allOtherCategories = categories.filter(category => category.id !== updatedCategory.id)
+            setCategories([...allOtherCategories, updatedCategory])
+        }
 
         const renderItem = ({ item, index }) => (
             <View style={{
@@ -491,8 +522,8 @@ const Home = () => {
                         backgroundColor: selectedCategory.color,
                     }}
                 >
-                    <TouchableOpacity>
-                        <Text style={{ color: COLORS.white, ...FONTS.body3 }}>CONFIRM {item.total.toFixed(2)} USD</Text>
+                    <TouchableOpacity onPress={() => confirmIncomingExpenses(item)}>
+                        <Text style={{ color: COLORS.white, ...FONTS.body3 }}>CONFIRM {item.total.toFixed(1)} USD</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -501,7 +532,6 @@ const Home = () => {
         return (
             <View>
                 {renderIncomingExpensesTitle()}
-
                 {
                     incomingExpenses.length > 0 &&
                     <FlatList
@@ -532,7 +562,7 @@ const Home = () => {
 
             return {
                 name: item.name,
-                y: total,
+                y: Math.round(total * 1e2) / 1e2,
                 expenseCount: confirmExpenses.length,
                 color: item.color,
                 id: item.id
@@ -540,6 +570,8 @@ const Home = () => {
         })
 
         let filterChartData = chartData.filter(a => a.y > 0)
+
+
 
         let totalExpense = filterChartData.reduce((a, b) => a + (b.y || 0), 0)
 
@@ -568,9 +600,6 @@ const Home = () => {
         let chartData = processCategoryDataToDisplay()
         let colorScales = chartData.map((item) => item.color)
         let totalExpenseCount = chartData.reduce((a, b) => a + (b.expenseCount || 0), 0)
-
-        console.log("Check Chart")
-        console.log(chartData)
 
         if(Platform.OS == 'ios')
         {
