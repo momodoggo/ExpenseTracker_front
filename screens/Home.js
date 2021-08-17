@@ -292,7 +292,7 @@ const Home = () => {
                     </View>
 
                     <View style={{ marginLeft: SIZES.padding }}>
-                        <Text style={{ color: COLORS.primary, ...FONTS.h3 }}>July 28, 2020</Text>
+                        <Text style={{ color: COLORS.primary, ...FONTS.h3 }}>August 5, 2021</Text>
                         <Text style={{ ...FONTS.body3, color: COLORS.darkgray }}>17% more than last month</Text>
                     </View>
                 </View>
